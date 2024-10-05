@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  keycloak:
+    build:
+      context: ./iam
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_USER}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_PASSWORD}
+      - DB_VENDOR=${KEYCLOAK_DB_VENDOR}
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.2
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgresdb
+  
+  postgresdb:
+    build:
+      context: ./database
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.3
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      - DEPLOYUSER=${DEPLOYUSER}
+      - DEPLOYUSER_PASSWORD=${DEPLOYUSER_PASSWORD}
+    networks:
+      custom_network:
+        ipv4_address: 172.20.0.4
+    ports:
+      - "8081:8080"
+      - "2222:22"
+    volumes:
+    - ssh_keys:/etc/ssh  # Mounting ssh keys for ssh access
+    depends_on:
+      - keycloak
+      - postgresdb
+
+volumes:
+  postgres_data:
+  ssh_keys:
+
+networks:
+  custom_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
