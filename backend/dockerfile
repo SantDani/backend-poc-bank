@@ -1,15 +1,18 @@
 # Use the official Maven image with Java 17
 FROM eclipse-temurin:17
 
-# Install OpenSSH server 
-#Uncomment the following line if you want to enable SSH access to the container
-#RUN apt-get update && apt-get install -y openssh-server
+# Install OpenSSH server to allow SSH connections to the container
+RUN apt-get update && apt-get install -y openssh-server
 
 # Create necessary SSH directory
 RUN mkdir -p /run/sshd
 
 # Create a new user
 RUN useradd -ms /bin/bash deployuser
+
+# Set build-time variables
+ARG DEPLOYUSER
+ARG DEPLOYUSER_PASSWORD
 
 # Set password for the user (replace 'password' with your secure password)
 RUN echo "${DEPLOYUSER}:${DEPLOYUSER_PASSWORD}" | chpasswd
